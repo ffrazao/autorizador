@@ -1,12 +1,12 @@
-package br.com.autorizador;
+package com.example.autenticador;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class AutorizadorApplication {
+public class AutenticadorApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(AutorizadorApplication.class, args);
+		SpringApplication.run(AutenticadorApplication.class, args);
 	}
 }
