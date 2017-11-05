@@ -74,12 +74,13 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
 		// @formatter:off
-		http.antMatcher("/**").authorizeRequests().antMatchers("/", "/login**", "/login/**", "/webjars/**").permitAll()
-				.anyRequest().authenticated().and().exceptionHandling()
-				.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/")).and().formLogin()
-				.loginPage("/login").failureUrl("/login?error").usernameParameter("username")
-				.passwordParameter("password").and().logout().logoutSuccessUrl("/").permitAll().and().csrf()
-				.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and()
+		http.antMatcher("/**").authorizeRequests().antMatchers("/", "/login**", "/login/**", "/h2**", "/h2/**", "/webjars/**").permitAll()
+				.anyRequest().authenticated().and()
+				.exceptionHandling().authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/")).and()
+				.formLogin().loginPage("/login").failureUrl("/login?error").usernameParameter("username").passwordParameter("password").and()
+				.logout().logoutSuccessUrl("/").permitAll().and()
+				//.csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and()
+				.csrf().disable()
 				.addFilterBefore(ssoFilter(), BasicAuthenticationFilter.class);
 		// @formatter:on
 	}

@@ -1,20 +1,23 @@
+server:
+  port: 8081
+  
 spring:
+  h2:
+    console:
+      enabled: true
+      path: /h2
   datasource:
-    initialize: true
+    initialize: false
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:file:C:\temp\test
+    username: sa
+    password: 
   ldap:
     embedded:
       ldif: classpath:test-server.ldif
       base-dn: dc=springframework,dc=org
       port: 8389
       
-#security:
-#  oauth2:
-#    client:
-#      client-id: acme
-#      client-secret: acmesecret
-#      scope: read,write
-#      auto-approve-scopes: '.*'
-#
 facebook:
   client:
     clientId: 233668646673605
