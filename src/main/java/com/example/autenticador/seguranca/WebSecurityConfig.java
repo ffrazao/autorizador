@@ -25,18 +25,29 @@ import org.springframework.security.oauth2.client.filter.OAuth2ClientContextFilt
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableOAuth2Client;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.filter.CompositeFilter;
 
 @EnableOAuth2Client
 @EnableWebSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
-	@Autowired
-	private OAuth2ClientContext oauth2ClientContext;
+	/**
+	 * utilizar este metodo para gerar senha para o usuario
+	 * 
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+		for (int i = 0; i < 10; i++) {
+			System.out.println(passwordEncoder.encode("123456"));
+		}
+	}
 
 	@Autowired
 	private DataSource dataSource;
+
+	@Autowired
+	private OAuth2ClientContext oauth2ClientContext;
 
 	@Autowired
 	public void configAuthentication(AuthenticationManagerBuilder auth) throws Exception {
@@ -59,18 +70,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 		// @formatter:on
 	}
 
-	/**
-	 * utilizar este metodo para gerar senha para o usuario
-	 * 
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-		for (int i = 0; i < 10; i++) {
-			System.out.println(passwordEncoder.encode("123456"));
-		}
-	}
-
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
 		// @formatter:off
@@ -86,11 +85,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	}
 
 	@Bean
-	public FilterRegistrationBean oauth2ClientFilterRegistration(OAuth2ClientContextFilter filter) {
-		FilterRegistrationBean registration = new FilterRegistrationBean();
-		registration.setFilter(filter);
-		registration.setOrder(-100);
-		return registration;
+	@ConfigurationProperties("facebook")
+	public ClientResources facebook() {
+		return new ClientResources();
 	}
 
 	@Bean
@@ -100,9 +97,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	}
 
 	@Bean
-	@ConfigurationProperties("facebook")
-	public ClientResources facebook() {
-		return new ClientResources();
+	public FilterRegistrationBean oauth2ClientFilterRegistration(OAuth2ClientContextFilter filter) {
+		FilterRegistrationBean registration = new FilterRegistrationBean();
+		registration.setFilter(filter);
+		registration.setOrder(-100);
+		return registration;
 	}
 
 	private Filter ssoFilter() {
@@ -118,8 +117,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 		OAuth2ClientAuthenticationProcessingFilter filter = new OAuth2ClientAuthenticationProcessingFilter(path);
 		OAuth2RestTemplate template = new OAuth2RestTemplate(client.getClient(), oauth2ClientContext);
 		filter.setRestTemplate(template);
-		UserInfoTokenServices tokenServices = new UserInfoTokenServices(client.getResource().getUserInfoUri(),
-				client.getClient().getClientId());
+		UserInfoTokenServices tokenServices = new UserInfoTokenServices(client.getResource().getUserInfoUri(), client.getClient().getClientId());
 		tokenServices.setRestTemplate(template);
 		filter.setTokenServices(tokenServices);
 		return filter;

@@ -37,29 +37,23 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 	@Autowired
 	private DataSource dataSource;
 
-	@Bean
-	public TokenEnhancer tokenEnhancer() {
-		return new CustomTokenEnhancer();
-	}
-
 	@Override
 	public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
 		final TokenEnhancerChain tokenEnhancerChain = new TokenEnhancerChain();
 		tokenEnhancerChain.setTokenEnhancers(Arrays.asList(tokenEnhancer()));
-		endpoints.tokenStore(tokenStore()).tokenEnhancer(tokenEnhancerChain)
-				.authenticationManager(authenticationManager);
+		endpoints.tokenStore(tokenStore()).tokenEnhancer(tokenEnhancerChain).authenticationManager(authenticationManager);
 		endpoints.authenticationManager(authenticationManager);
 	}
 
 	@Override
 	public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
-		security
-			.tokenKeyAccess("permitAll()")
-			.checkTokenAccess("isAuthenticated()");
-		
 //		security
-//			.tokenKeyAccess("isAnonymous() || hasAuthority('ROLE_TRUSTED_CLIENT')")
-//			.checkTokenAccess("hasAuthority('ROLE_TRUSTED_CLIENT')");
+//			.tokenKeyAccess("permitAll()")
+//			.checkTokenAccess("isAuthenticated()");
+		
+		security
+			.tokenKeyAccess("isAnonymous() || hasAuthority('ROLE_TRUSTED_CLIENT')")
+			.checkTokenAccess("hasAuthority('ROLE_TRUSTED_CLIENT')");
 	}
 
 	@Override
@@ -68,8 +62,8 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 	}
 
 	@Bean
-	public TokenStore tokenStore() {
-		return new JdbcTokenStore(dataSource);
+	public TokenEnhancer tokenEnhancer() {
+		return new CustomTokenEnhancer();
 	}
 
 	@Bean
@@ -79,6 +73,11 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 		defaultTokenServices.setTokenStore(tokenStore());
 		defaultTokenServices.setSupportRefreshToken(true);
 		return defaultTokenServices;
+	}
+
+	@Bean
+	public TokenStore tokenStore() {
+		return new JdbcTokenStore(dataSource);
 	}
 
 }
