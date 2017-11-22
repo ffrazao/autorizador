@@ -18,6 +18,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.ldap.authentication.ad.ActiveDirectoryLdapAuthenticationProvider;
 import org.springframework.security.oauth2.client.OAuth2ClientContext;
 import org.springframework.security.oauth2.client.OAuth2RestTemplate;
 import org.springframework.security.oauth2.client.filter.OAuth2ClientAuthenticationProcessingFilter;
@@ -48,39 +49,51 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
 	@Autowired
 	private OAuth2ClientContext oauth2ClientContext;
+	
+	@Autowired
+	private ActiveDirectoryLdapAuthenticationProvider activeDirectoryLdapAuthenticationProvider;
+
+	@Bean
+	public ActiveDirectoryLdapAuthenticationProvider getActiveDirectoryLdapAuthenticationProvider() {
+		ActiveDirectoryLdapAuthenticationProvider provider = new ActiveDirectoryLdapAuthenticationProvider("dftrans.df.gov.br", "ldap://10.64.0.100:389", "dc=dftrans,dc=gdfnet,dc=df");
+		provider.setSearchFilter("(&(objectClass=user)(userPrincipalName={0}))");
+		provider.setConvertSubErrorCodesToExceptions(true);
+
+		return provider;
+	}
+
 
 	@Autowired
 	public void configAuthentication(AuthenticationManagerBuilder auth) throws Exception {
 		// @formatter:off
 		auth
+			.jdbcAuthentication().dataSource(dataSource).passwordEncoder(new BCryptPasswordEncoder())
+				.usersByUsernameQuery("select username, password, enabled from users where username=?")
+				.authoritiesByUsernameQuery("select username, role from user_roles where username=?").and()
+			.authenticationProvider(activeDirectoryLdapAuthenticationProvider)
 			.ldapAuthentication()
 				.userDnPatterns("uid={0},ou=people")
 				.groupSearchBase("ou=groups")
 				.contextSource()
-					.url("ldap://localhost:8389/dc=springframework,dc=org")
-					.and()
-				.passwordCompare()
+				.url("ldap://localhost:8389/dc=springframework,dc=org").and()
+					.passwordCompare()
 					.passwordEncoder(new LdapShaPasswordEncoder())
 					.passwordAttribute("userPassword").and().and()
-			.inMemoryAuthentication().withUser("a").password("a").roles("USER")
-				.and().and()
-			.jdbcAuthentication().dataSource(dataSource).passwordEncoder(new BCryptPasswordEncoder())
-				.usersByUsernameQuery("select username, password, enabled from users where username=?")
-				.authoritiesByUsernameQuery("select username, role from user_roles where username=?");
+			.inMemoryAuthentication().withUser("a").password("a").roles("USER");
 		// @formatter:on
 	}
 
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
 		// @formatter:off
-		http.antMatcher("/**").authorizeRequests().antMatchers("/", "/login**", "/login/**", "/h2**", "/h2/**", "/webjars/**").permitAll()
-				.anyRequest().authenticated().and()
-				.exceptionHandling().authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/")).and()
-				.formLogin().loginPage("/login").failureUrl("/login?error").usernameParameter("username").passwordParameter("password").and()
-				.logout().logoutSuccessUrl("/").permitAll().and()
+		http.antMatcher("/**").authorizeRequests().antMatchers("/", "/login**", "/login/**", "/h2**", "/h2/**", "/webjars/**")
+				.permitAll().anyRequest().authenticated().and()
+			.exceptionHandling().authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/")).and()
+			.formLogin().loginPage("/login").failureUrl("/login?error").usernameParameter("username").passwordParameter("password").and()
+			.logout().logoutSuccessUrl("/").permitAll().and()
 				//.csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and()
-				.csrf().disable()
-				.addFilterBefore(ssoFilter(), BasicAuthenticationFilter.class);
+			.csrf().disable()
+			.addFilterBefore(ssoFilter(), BasicAuthenticationFilter.class);
 		// @formatter:on
 	}
 
