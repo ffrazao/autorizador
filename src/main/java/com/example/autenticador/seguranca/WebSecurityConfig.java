@@ -40,7 +40,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	public static void main(String[] args) {
 		PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 		for (int i = 0; i < 10; i++) {
-			System.out.println(passwordEncoder.encode("123456"));
+			System.out.println(passwordEncoder.encode("alex"));
 		}
 	}
 
